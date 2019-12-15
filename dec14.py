@@ -84,11 +84,12 @@ def parse(formula):
     molecules = {"ORE": Molecule(1)}
     lines = formula.split("\n")
 
+    # add products to dict
     for line in lines:
         product = line.split(" => ")[1].split(" ")
         name, ratio = product[1], int(product[0])
         molecules[name] = Molecule(ratio)
-
+    # add the reactants to each molecule
     for line in lines:
         product = line.split(" => ")[1].split(" ")[1]
         reactants = line.split(" => ")[0].split(", ")
