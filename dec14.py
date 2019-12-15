@@ -74,7 +74,7 @@ class Molecule:
     def getQuantity(self, amount): 
         new = math.ceil((amount - self.surplus)/self.ratio)
         self.processed += new
-        self.surplus = (self.ratio * new) - (amount - self.surplus)
+        self.surplus += self.ratio * new - amount
 
         for k, v in self.recipe.items():
             if k != None:
@@ -89,6 +89,7 @@ def parse(formula):
         product = line.split(" => ")[1].split(" ")
         name, ratio = product[1], int(product[0])
         molecules[name] = Molecule(ratio)
+
     # add the reactants to each molecule
     for line in lines:
         product = line.split(" => ")[1].split(" ")[1]
@@ -100,27 +101,34 @@ def parse(formula):
 
     return molecules
 
-def binSearch(estimate, formula, target):
+def binSearch(estimate, molecules, target):
     left, right = 1, estimate * 2
     while right - left > 1:
         middle = (left + right) // 2
-        ore = getOre(middle, formula)
+        ore = getOre(middle, molecules)
         if ore < target:
             left = middle
         else:
             right = middle
     return left
 
-def getOre(amount, formula):
-    molecules = parse(formula)
+def getOre(amount, molecules):
     molecules["FUEL"].getQuantity(amount)
-    return molecules["ORE"].processed
+    ore = molecules["ORE"].processed
+
+    # reset
+    for moluecule in molecules.values():
+        moluecule.processed = 0
+        moluecule.surplus = 0
+
+    return ore
 
 # part 1
-one = getOre(1, formula)
+molecules = parse(formula)
+one = getOre(1, molecules)
 print(one)
 
 # part 2 
 target = 1000000000000
 estimate = target // one
-print(binSearch(estimate, formula, target))
+print(binSearch(estimate, molecules, target))
