@@ -19,6 +19,14 @@ def getSequence(numPhase, pattern, sequence):
         sequence = np.absolute(sequence) % 10
     return sequence.T[0]
 
+def getPart2(numPhase, offset, sequence):
+    data = sequence[offset:]
+    for _ in range(numPhase):
+        data = np.cumsum(data[::-1]) % 10
+        data = data[::-1]
+
+    return data
+
 # part 1
 pattern = getPattern(len(inputs))
 sequence = np.array([int(i) for i in inputs])
@@ -31,9 +39,5 @@ print(final[:8])
 # part 2
 sequence = np.array([int(i) for i in inputs*10000])
 offset = int(inputs[:7])
-data = sequence[offset:]
-for _ in range(numPhase):
-    data = np.cumsum(data[::-1]) % 10
-    data = data[::-1]
-
-print(data[:8])
+final = getPart2(numPhase, offset, sequence)
+print(final[:8])
