@@ -14,7 +14,7 @@ def getPattern(size):
     return pattern
 
 def getSequence(numPhase, pattern, sequence):
-    for i in range(numPhase):
+    for _ in range(numPhase):
         sequence = pattern @ sequence
         sequence = np.absolute(sequence) % 10
     return sequence.T[0]
@@ -32,7 +32,7 @@ print(final[:8])
 sequence = np.array([int(i) for i in inputs*10000])
 offset = int(inputs[:7])
 data = sequence[offset:]
-for i in range(numPhase):
+for _ in range(numPhase):
     data = np.cumsum(data[::-1]) % 10
     data = data[::-1]
 
