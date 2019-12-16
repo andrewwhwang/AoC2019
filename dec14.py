@@ -71,14 +71,14 @@ class Molecule:
         self.processed = 0
         self.surplus = 0
 
-    def getQuantity(self, amount): 
+    def DFS(self, amount): 
         new = math.ceil((amount - self.surplus)/self.ratio)
         self.processed += new
         self.surplus += self.ratio * new - amount
 
         for k, v in self.recipe.items():
             if k != None:
-                k.getQuantity(v*new) 
+                k.DFS(v*new) 
 
 def parse(formula):
     molecules = {"ORE": Molecule(1)}
@@ -90,7 +90,7 @@ def parse(formula):
         name, ratio = product[1], int(product[0])
         molecules[name] = Molecule(ratio)
 
-    # add the reactants to each molecule
+    # add the recipe from reactants
     for line in lines:
         product = line.split(" => ")[1].split(" ")[1]
         reactants = line.split(" => ")[0].split(", ")
@@ -113,7 +113,7 @@ def binSearch(estimate, molecules, target):
     return left
 
 def getOre(amount, molecules):
-    molecules["FUEL"].getQuantity(amount)
+    molecules["FUEL"].DFS(amount)
     ore = molecules["ORE"].processed
 
     # reset
