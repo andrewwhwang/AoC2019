@@ -2,28 +2,6 @@ from time import perf_counter
 import numpy as np
 import heapq
 
-# inputs = """#########
-# #b.A.@.a#
-# #########"""
-
-# inputs = """########################
-# #f.D.E.e.C.b.A.@.a.B.c.#
-# ######################.#
-# #d.....................#
-# ########################"""
-
-# inputs = """########################
-# #f.D.E.e.............@.#
-# ######################.#
-# #d.....................#
-# ########################"""
-
-# inputs = """########################
-# #...............b.C.D.f#
-# #.######################
-# #.....@.a.B.c.d.A.e.F.g#
-# ########################"""
-
 # inputs = """#################
 # #i.G..c...e..H.p#
 # ########.########
@@ -33,13 +11,6 @@ import heapq
 # ########.########
 # #l.F..d...h..C.m#
 # #################"""
-
-# inputs = """########################
-# #@..............ac.GI.b#
-# ###d#e#f################
-# ###A#B#C################
-# ###g#h#i################
-# ########################"""
 
 inputs = """#################################################################################
 #...#.....#......c....#...#.Q.......#...#f#a....#..j..........#...............#.#
@@ -170,16 +141,19 @@ def getValidAdj(loc, dungeon):
     validKeys = [pos for pos in poss if dungeon[pos] != '#']
     return set(validKeys)
 
-def makeGraph(inputs):
+def getDungeon(inputs):
     lines =  inputs.split("\n")
     dungeon = np.zeros((len(lines),len(lines[0])),dtype="U")
     for i, line in enumerate(lines):
         dungeon[i] = list(line)
 
+    return dungeon
+
+def makeGraph(dungeon):
     Nodes = {}
     # first pass to initialize
     for (row, col), char in np.ndenumerate(dungeon):
-        if char.islower() or char == '@' or char.isupper():
+        if char != '.' and char != '#':
             Nodes[char] = Node(char, (row, col))
     # second pass to connect everything
     for name, node in Nodes.items():
@@ -190,31 +164,50 @@ def makeGraph(inputs):
     return Nodes
 
 def BFS(start, maxNodes):
+    numPlayers = len(start)
     #tuple = (distance, node, set of keys aquired)
     queue = [(0, start, frozenset())]
     history = set()
 
     while queue:
-        distance, node, aquiredKeys = heapq.heappop(queue)
+        distance, nodes, aquiredKeys = heapq.heappop(queue)
 
-        if (node, aquiredKeys) in history:
+        if (nodes, aquiredKeys) in history:
             continue
 
-        history.add((node, aquiredKeys))
+        history.add((nodes, aquiredKeys))
 
         if len(aquiredKeys) == maxNodes:
             return distance
 
-        for adj, dist in node.adjList.items():
-            if adj.name.islower(): 
-                heapq.heappush(queue,(distance + dist, adj, aquiredKeys|frozenset([adj])))
-            elif adj.key in aquiredKeys:
-                heapq.heappush(queue,(distance + dist, adj, aquiredKeys))
+        for i in range(numPlayers):
+            for adj, edge in nodes[i].adjList.items():
+                players = nodes[:i]+(adj,)+nodes[i+1:]
+                if adj.name.islower():
+                    heapq.heappush(queue,(distance + edge, players, aquiredKeys|frozenset([adj])))
+                elif adj.key in aquiredKeys:
+                    heapq.heappush(queue,(distance + edge, players, aquiredKeys))
     return distance
 
 if __name__== "__main__":
-    graph = makeGraph(inputs)
+    #part 1 ~1secs
+    dungeon = getDungeon(inputs)
+    graph = makeGraph(dungeon)
     numKeys = len([g for g in graph if g.islower()])
 
-    distance = BFS(graph['@'], numKeys)
+    start = perf_counter()
+    distance = BFS((graph['@'],), numKeys)
     print(distance)
+    print(f"part1 time = {perf_counter()-start}")
+    
+    #part 2 ~180secs
+    start = perf_counter()
+    row, col = dungeon.shape[0]//2, dungeon.shape[1]//2
+    dungeon[row-1:row+2,col-1:col+2] = np.array([['1','#','2'],
+                                                ['#','#','#'],
+                                                ['3','#','4']])
+    
+    graph = makeGraph(dungeon)
+    distance = BFS((graph['1'],graph['2'],graph['3'],graph['4']), numKeys)
+    print(distance)
+    print(f"part2 time = {perf_counter()-start}")
