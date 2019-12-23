@@ -1,3 +1,5 @@
+import numpy as np
+
 inputs="""cut 9002
 deal with increment 17
 cut -4844
@@ -129,3 +131,66 @@ def parse(inputs, deck):
 deck = list(range(10007))
 deck = parse(inputs,deck)
 print(deck.index(2019))
+
+# part 2
+iterations = 101741582076661
+deckSize = 119315717514047
+pos = 2020
+
+# multiply two matrices with modulo
+def matrix_mult(matA, matB):
+    return ((matA[0]*matB[0] + matA[1]*matB[2]) % deckSize,
+            (matA[0]*matB[1] + matA[1]*matB[3]) % deckSize,
+            (matA[2]*matB[0] + matA[3]*matB[2]) % deckSize,
+            (matA[2]*matB[1] + matA[3]*matB[3]) % deckSize)
+
+# matrix logaritmic exponentiation
+def matrix_power(mat, exp):
+    mul = mat
+    ans = (1,0,0,1)
+    while exp > 0:
+        if exp % 2 == 1:
+            ans = matrix_mult(mul, ans)
+        exp //= 2
+        mul = matrix_mult(mul, mul)
+    return ans
+
+def getSinglePass(inputs):
+    increment, offset = 1, 0
+    lines =  inputs.split("\n")
+    for line in lines:
+        words = line.split(" ")
+        if words[0] == "cut":
+            offset -= int(words[1])
+            offset %= deckSize
+        elif words[1] == "with":
+            increment *= int(words[3])
+            increment %= deckSize
+            offset *= int(words[3])
+            offset %= deckSize
+        elif words[1] == "into":
+            increment *= -1
+            increment %= deckSize
+            offset = -1 * (offset+1)
+            offset %= deckSize
+    return increment, offset
+
+# Ai + B = pos
+# where A = increment, B = offset
+#
+# [A B]  *  [i]   =    Ai + B = pos
+# [0 1]     [1]
+# transformation matrix * initial values = final values
+# singlePass = A and B for 1 pass of instructions
+# exponentiate for multiple passes
+increment, offset = getSinglePass(inputs)
+incTotal, offTotal = matrix_power((increment,offset,0,1), iterations)[:2]
+
+# Ai + B = pos
+# (incTotal)i + (offTotal) = pos
+# (incTotal)i = pos - offTotal
+# i = (pos - offTotal) * inv(incTotal)
+#
+# where inv = a^(p-2) % p (fermat's little theorem)
+inv = pow(incTotal, deckSize-2, deckSize)
+print((inv*(pos-offTotal))%deckSize)
